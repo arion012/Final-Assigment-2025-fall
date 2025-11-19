@@ -29,3 +29,20 @@ DandData<- DandData %>%
 
 summary(DandData)
 ```
+
+
+Making some plots to visualize trends
+```{r, include=TRUE}
+DandData %>% 
+  select(ac, cr) %>% 
+  ggplot() +
+  aes(x = ac, y = cr) +
+  geom_point() +
+  geom_smooth()
+
+DandData %>%
+ggplot() +
+aes(x = size, fill = type) +
+geom_bar()
+
+```

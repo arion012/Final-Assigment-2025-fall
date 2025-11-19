@@ -10,6 +10,30 @@ editor_options:
 install.packages("tidyr")
 library(tidyr)
 library(tidyverse)
+library(dplyr)
+library(psych)
 
 DandData <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/refs/heads/main/data/2025/2025-05-27/monsters.csv")
 view(DandData)
+
+describe(DandData)
+
+DandData<- DandData %>% 
+  mutate(size = factor(size),
+         type = factor(type),
+         category = factor(category),
+         alignment =factor(alignment))
+
+summary(DandData)
+
+DandData %>% 
+  select(ac, cr) %>% 
+  ggplot() +
+  aes(x = ac, y = cr) +
+  geom_point() +
+  geom_smooth()
+
+DandData %>%
+  ggplot() +
+  aes(x = size, fill = type) +
+  geom_bar()
