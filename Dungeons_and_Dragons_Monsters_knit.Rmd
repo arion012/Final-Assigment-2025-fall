@@ -7,6 +7,16 @@ editor_options:
 ---
 ```{r, include=TRUE}
 install.packages("tidyr")
+install.packages("Rsampling")
+library(Rsampling)
+install.packages("recipes")
+library(recipes)
+install.packages("parsnip")
+library(parsnip)
+install.packages("tune")
+library(tune)
+install.packages("yardstick")
+library(yardstick)
 library(tidyr)
 library(tidyverse)
 library(dplyr)
