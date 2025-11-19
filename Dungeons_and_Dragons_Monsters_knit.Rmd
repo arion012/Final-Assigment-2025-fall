@@ -84,9 +84,56 @@ ggplot(ddlastfit_model1, aes(x = cr, y = .pred)) +
   geom_point() +
   geom_smooth()
 
+AIC(Ddlastfit)
+
 ```
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
+
+Building a complex supervised learning model: predicting that monsters with higher intelligence, wisdom and charisma would score higher in challange rating because they can subdue the adventurers via manipulation
 ```{r, include=TRUE}
+
+supmodel2 <- lm_model %>% 
+  last_fit(cr ~ ac + int + cha + wis,
+           split = Ddsplit)
+
+supmodel2 %>% 
+  collect_metrics()
+supmodel2_pred <- supmodel2 %>% 
+  collect_predictions()
+
+
+ggplot(supmodel2_pred, aes(x = cr, y = .pred)) +
+  geom_point() +
+  geom_smooth()
+
+```
+The hypothesis doesnt seem to stand the model slightly is worse than the simple one, with 0.629 rsq it explains smaller percentage of the data, and with rmse 3.94 it misses the mark by a higher amount.
+
+Lets give another to a more complex model but this time lets hypothesize that stronger, sturdier (more hp) and more dexterous enemies would score a higher cr
+
+```{r, include=TRUE}
+
+supmodel3 <- lm_model %>% 
+  last_fit(cr ~ ac + str + dex + hp_number,
+           split = Ddsplit)
+
+supmodel3 %>% 
+  collect_metrics()
+supmodel3_pred <- supmodel3 %>% 
+  collect_predictions()
+
+
+ggplot(supmodel3_pred, aes(x = cr, y = .pred)) +
+  geom_point() +
+  geom_smooth()
+
+```
+Oh okay, it seems that this is way more accurate than our previous two hypothesises, with a 0.947 rsq its outstanding at explaining the data coming much closer to fully explainig it fully, rmse is way smaller 1.69. It seems that creatures with higher cr are usually way more stronger, more agile and usually with more HP. But now lets check it with more in depth linear regression model to understand which predictors play a key factor in explaining cr 
+
+Building a simple linear regression model
+```{r, include=TRUE}
+reg_model1 <- lm(cr ~ ac + str + dex + hp_number, DandData)
+summary(reg_model1)
 
 ```
