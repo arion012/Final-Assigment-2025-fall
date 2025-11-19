@@ -1,0 +1,31 @@
+---
+  title: 'Dungeons and Dragons: monsters'
+author: "Sebestyén V.Nagy"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+```{r, include=TRUE}
+install.packages("tidyr")
+library(tidyr)
+library(tidyverse)
+library(dplyr)
+library(psych)
+```
+
+```{r, include=TRUE}
+DandData <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/refs/heads/main/data/2025/2025-05-27/monsters.csv")
+view(DandData)
+describe(DandData)
+```
+
+```{r, include=TRUE}
+
+DandData<- DandData %>% 
+  mutate(size = factor(size),
+         type = factor(type),
+         category = factor(category),
+         alignment =factor(alignment))
+
+summary(DandData)
+```
