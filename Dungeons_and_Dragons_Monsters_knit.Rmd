@@ -84,6 +84,7 @@ ggplot(ddlastfit_model1, aes(x = cr, y = .pred)) +
   geom_point() +
   geom_smooth()
 
+<<<<<<< HEAD
 AIC(Ddlastfit)
 
 ```
@@ -136,4 +137,11 @@ Building a simple linear regression model
 reg_model1 <- lm(cr ~ ac + str + dex + hp_number, DandData)
 summary(reg_model1)
 
+=======
+```
+Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
+
+```{r, include=TRUE}
+
+>>>>>>> 0fbd8c37b0cc2fc14243ec855cd3ce21e1fce9f5
 ```
