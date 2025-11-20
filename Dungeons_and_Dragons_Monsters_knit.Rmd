@@ -23,6 +23,7 @@ library(dplyr)
 library(psych)
 install.packages("tidymodels")
 library(tidymodels)
+library(car)
 ```
 
 ```{r, include=TRUE}
@@ -136,12 +137,27 @@ Building a simple linear regression model
 ```{r, include=TRUE}
 reg_model1 <- lm(cr ~ ac + str + dex + hp_number, DandData)
 summary(reg_model1)
-
-
 ```
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
 ```{r, include=TRUE}
+AIC(reg_model1) #pretty high AIC which means that the model doesn't not fit that well, and there is a high value of errors also but in itself we cant use this information just now, but when we build the second model. 
 
+reg_model1 %>% 
+  plot(which = 4)
 
+reg_model1 %>% 
+  plot(which = 5)
+
+#from checking high leverage cases and cook distance we found that there is one datapoint which is higly influental on the model. Altough this can modify our results lets ckeck the following results of the data to see if the requirements for regression are still fulfilled. 
+
+reg_model1 %>% 
+  plot(which = 2)
+describe(residuals(reg_model1))
+#skewness is alright with 0.59 but the kurtosis isn't the best its well over 5.2, it can mean that the normality requirement is unmet, could be because of the influental cases.
+
+reg_model1 %>% 
+  residualPlots()
+#linearity si definetly unmet with hp_number this time. The other ones are pretty solid with linearity. It seems possible that including the Hp can hurt the model. But lets check further... 
+```
 ```
