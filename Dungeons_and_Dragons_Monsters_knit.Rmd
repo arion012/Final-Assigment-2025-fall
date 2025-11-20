@@ -25,18 +25,17 @@ install.packages("tidymodels")
 library(tidymodels)
 library(car)
 library(lmtest)
-library(utils)
-install.packages("boot")
-library(boot)
+install.packages("polycor")
+library(polycor)
 
 ```
-
+#Reading the data in
 ```{r, include=TRUE}
 DandData <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/refs/heads/main/data/2025/2025-05-27/monsters.csv")
 view(DandData)
 describe(DandData)
 ```
-
+#Making some factorization
 ```{r, include=TRUE}
 
 DandData<- DandData %>% 
@@ -70,7 +69,7 @@ geom_bar()
 ```{r, include=TRUE}
 Ddsplit <- initial_split(DandData,
                          prop = 0.75,
-                         strata = ac)
+                         strata = cr)
 
 lm_model <- linear_reg() %>% 
   set_engine("lm") %>% 
@@ -205,12 +204,57 @@ AIC(reg_model2)
 The second model is better, kurtosis is less (Still quite high = 3,81), but on AIC the model rates better, RSE is also lower and adjustedrsquare a bit better. We had to exclude three outliers to achieve this (Tarrasque, Ancient Gold Dragon and Ancient Red dragon) because their hp distored the model. Altough dex and str doesnt show a strong correlation with the cr at all, so we might just well exclude them from the predictors and try out another predictor.
 
 ```{r, include=TRUE}
+res <- aov(hp_number ~ size, data = Data_modified) #checking whether there is a difference between HP based on the size category, there might be an interaction going on between these two predictors. 
+summary(res) #its seems like its a certain possibility
+
 reg_model3 <- lm(cr ~ ac + hp_number * size, Data_modified)
 summary(reg_model3)
-reg_model3 %>% 
-  residualPlots()
-corr()
 
 reg_model3 %>% 
+  residualPlots()
+reg_model3 %>% 
+  bptest()
+reg_model3 %>% 
+  plot(which = 3)
+reg_model3 %>% 
+  plot(which = 4)
+describe(residuals(reg_model3))
+reg_model3 %>% 
   vif()
+
+Data_modified_alt <- Data_modified[-c(171, 129, 145), ]
+reg_model4 <- lm(cr ~ ac + hp_number * size, Data_modified1)
+summary(reg_model4)
+
+reg_model4 %>% 
+  residualPlots()
+reg_model4 %>% 
+  bptest()
+reg_model4 %>% 
+  plot(which = 3)
+reg_model4 %>% 
+  plot(which = 4)
+describe(residuals(reg_model4))
+reg_model4 %>% 
+  vif()
+
+AIC(reg_model4)
+```
+#Results from the third regression
+Well, we found that size is a much better predictor, combined with AC it explains 0.948 of the residuals. In the mean time it seem to interact with Hp_number so we got a pretty much working modell now. We could still improve on this by excluding some outliers based on the cooks distance (4/n) (ancient red dragon, lemure and mummy) and it also significantly improves the AIC. The interaction weak point is only with small and tiny creatures, it comes short with them. We also impacted the curtosis by the trimmings it got higher compared to the previous model. 
+
+
+```{r, include=TRUE}
+finalsplit <- initial_split(Data_modified1,
+                         prop = 0.75,
+                         strata = cr)
+
+supmodelfinal <- lm_model %>% 
+  last_fit(cr ~ ac + hp_number * size, Data_modified1)
+           split = Ddsplit)
+
+supmodelfinal %>% 
+  collect_metrics()
+supmodel2_pred <- supmodel2 %>% 
+  collect_predictions()
 ```
