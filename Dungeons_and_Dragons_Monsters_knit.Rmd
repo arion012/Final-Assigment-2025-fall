@@ -1,11 +1,10 @@
 ---
-  title: 'Dungeons and Dragons: monsters'
+title: 'Dungeons and Dragons: monsters'
 author: "Sebestyén V.Nagy"
 output: html_document
-editor_options: 
-  chunk_output_type: console
 ---
 ```{r, include=FALSE}
+options(repos = c(CRAN = "https://cran.rstudio.com/"))
 install.packages("tidyr")
 install.packages("Rsampling")
 library(Rsampling)
@@ -25,11 +24,9 @@ install.packages("tidymodels")
 library(tidymodels)
 library(car)
 library(lmtest)
-install.packages("polycor")
-library(polycor)
 
 ```
-#Reading the data in
+# Reading the data in
 ```{r, include=TRUE}
 DandData <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/refs/heads/main/data/2025/2025-05-27/monsters.csv")
 view(DandData)
@@ -47,7 +44,7 @@ DandData<- DandData %>%
 summary(DandData)
 ```
 
-#Visualizing some trends
+# Visualizing some trends
 
 ```{r, include=TRUE}
 DandData %>% 
@@ -64,7 +61,7 @@ geom_bar()
 
 ```
 
-#Exploring the data with suprevised learning models
+# Exploring the data with suprevised learning models
 
 ```{r, include=TRUE}
 Ddsplit <- initial_split(DandData,
@@ -94,7 +91,7 @@ ggplot(ddlastfit_model1, aes(x = cr, y = .pred)) +
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
 
-#Building a complex supervised learning model
+# Building a complex supervised learning model
 This time predicting that monsters with higher intelligence, wisdom and charisma would score higher in challange rating because they can subdue the adventurers via manipulation
 ```{r, include=TRUE}
 
@@ -137,7 +134,7 @@ ggplot(supmodel3_pred, aes(x = cr, y = .pred)) +
 ```
 Oh okay, it seems that this is way more accurate than our previous two hypothesises, with a 0.947 rsq its outstanding at explaining the data coming much closer to fully explainig it fully, rmse is way smaller 1.69. It seems that creatures with higher cr are usually way more stronger, more agile and usually with more HP. But now lets check it with more in depth linear regression model to understand which predictors play a key factor in explaining cr 
 
-Building a simple linear regression model
+# Building a simple linear regression model
 ```{r, include=TRUE}
 reg_model1 <- lm(cr ~ ac + str + dex + hp_number, DandData)
 summary(reg_model1)
@@ -155,7 +152,7 @@ reg_model1 %>%
 reg_model1 %>% 
   plot(which = 5)
 
-#from checking high leverage cases and cook distance we found that there is one data point which is highly influential on the model. Altough this can modify our results lets check the following results of the data to see if the requirements for regression are still fulfilled. 
+#From checking high leverage cases and cook distance we found that there are three data points which are highly influential on the model. Altough this can modify our results lets check the following results of the data to see if the requirements for regression are still fulfilled. 
 
 reg_model1 %>% 
   plot(which = 2)
@@ -200,7 +197,8 @@ reg_model2 %>%
   vif()
 AIC(reg_model2)
 ```
-#Results from the second regression
+# Results from the second regression
+
 The second model is better, kurtosis is less (Still quite high = 3,81), but on AIC the model rates better, RSE is also lower and adjustedrsquare a bit better. We had to exclude three outliers to achieve this (Tarrasque, Ancient Gold Dragon and Ancient Red dragon) because their hp distored the model. Altough dex and str doesnt show a strong correlation with the cr at all, so we might just well exclude them from the predictors and try out another predictor.
 
 ```{r, include=TRUE}
@@ -222,7 +220,7 @@ describe(residuals(reg_model3))
 reg_model3 %>% 
   vif()
 
-Data_modified_alt <- Data_modified[-c(171, 129, 145), ]
+Data_modified1 <- Data_modified[-c(171, 129, 145), ]
 reg_model4 <- lm(cr ~ ac + hp_number * size, Data_modified1)
 summary(reg_model4)
 
@@ -240,7 +238,8 @@ reg_model4 %>%
 
 AIC(reg_model4)
 ```
-#Results from the third regression
+# Results from the third regression
+
 Well, we found that size is a much better predictor, combined with AC it explains 0.948 of the residuals. In the mean time it seem to interact with Hp_number so we got a pretty much working modell now. We could still improve on this by excluding some outliers based on the cooks distance (4/n) (ancient red dragon, lemure and mummy) and it also significantly improves the AIC. The interaction weak point is only with small and tiny creatures, it comes short with them. We also impacted the curtosis by the trimmings it got higher compared to the previous model. 
 
 
@@ -259,6 +258,7 @@ supmodel2_pred <- supmodel2 %>%
   collect_predictions()
 supmodel2_pred
 ```
-#Verdict
+# Verdict
+
 We managed to assert a supervised algorithm which does its job fairly well on guessing cr of monsters, which are not some outlying cases. But with an 1.23 rmse the mistakes are quite low and rsq is quite high (9.50) explaining quite large part of the residuals.
 I hope this algorithm will be somewhat useful for the futures adventurers for guessing cr of monsters. 
