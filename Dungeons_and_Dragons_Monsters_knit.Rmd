@@ -5,7 +5,7 @@ output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-```{r, include=TRUE}
+```{r, include=FALSE}
 install.packages("tidyr")
 install.packages("Rsampling")
 library(Rsampling)
@@ -24,6 +24,11 @@ library(psych)
 install.packages("tidymodels")
 library(tidymodels)
 library(car)
+library(lmtest)
+library(utils)
+install.packages("boot")
+library(boot)
+
 ```
 
 ```{r, include=TRUE}
@@ -43,8 +48,8 @@ DandData<- DandData %>%
 summary(DandData)
 ```
 
+#Visualizing some trends
 
-Making some plots to visualize trends
 ```{r, include=TRUE}
 DandData %>% 
   select(ac, cr) %>% 
@@ -60,7 +65,7 @@ geom_bar()
 
 ```
 
-first simple supervised learning model
+#Exploring the data with suprevised learning models
 
 ```{r, include=TRUE}
 Ddsplit <- initial_split(DandData,
@@ -85,14 +90,13 @@ ggplot(ddlastfit_model1, aes(x = cr, y = .pred)) +
   geom_point() +
   geom_smooth()
 
-<<<<<<< HEAD
-AIC(Ddlastfit)
 
 ```
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
 
-Building a complex supervised learning model: predicting that monsters with higher intelligence, wisdom and charisma would score higher in challange rating because they can subdue the adventurers via manipulation
+#Building a complex supervised learning model
+This time predicting that monsters with higher intelligence, wisdom and charisma would score higher in challange rating because they can subdue the adventurers via manipulation
 ```{r, include=TRUE}
 
 supmodel2 <- lm_model %>% 
@@ -110,6 +114,7 @@ ggplot(supmodel2_pred, aes(x = cr, y = .pred)) +
   geom_smooth()
 
 ```
+
 The hypothesis doesnt seem to stand the model slightly is worse than the simple one, with 0.629 rsq it explains smaller percentage of the data, and with rmse 3.94 it misses the mark by a higher amount.
 
 Lets give another to a more complex model but this time lets hypothesize that stronger, sturdier (more hp) and more dexterous enemies would score a higher cr
@@ -140,6 +145,8 @@ summary(reg_model1)
 ```
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
+# Testing the model
+
 ```{r, include=TRUE}
 AIC(reg_model1) #pretty high AIC which means that the model doesn't not fit that well, and there is a high value of errors also but in itself we cant use this information just now, but when we build the second model. 
 
@@ -149,15 +156,61 @@ reg_model1 %>%
 reg_model1 %>% 
   plot(which = 5)
 
-#from checking high leverage cases and cook distance we found that there is one datapoint which is higly influental on the model. Altough this can modify our results lets ckeck the following results of the data to see if the requirements for regression are still fulfilled. 
+#from checking high leverage cases and cook distance we found that there is one data point which is highly influential on the model. Altough this can modify our results lets check the following results of the data to see if the requirements for regression are still fulfilled. 
 
 reg_model1 %>% 
   plot(which = 2)
 describe(residuals(reg_model1))
-#skewness is alright with 0.59 but the kurtosis isn't the best its well over 5.2, it can mean that the normality requirement is unmet, could be because of the influental cases.
+#skewness is alright with 0.59 but the kurtosis isn't the best its well over 5.2, it can mean that the normality requirement is unmet, could be because of the influential cases.
 
 reg_model1 %>% 
   residualPlots()
-#linearity si definetly unmet with hp_number this time. The other ones are pretty solid with linearity. It seems possible that including the Hp can hurt the model. But lets check further... 
+#linearity is definitely unmet with hp_number this time. The other ones are pretty solid with linearity. It seems possible that including the Hp can hurt the model. But lets check further... 
+
+reg_model1 %>% 
+  plot(which = 3)
+reg_model1 %>% 
+  bptest()
+#homoscedasticity is also significant in the model. Which means that the residuals are not spread out similarly in the model.
+
+reg_model1 %>% 
+  vif()
+#but at least it seems that multicorrealinity isn't problematic. 
 ```
+
+So the model isn't that great, there are some influential cases which distort our results, we might want to exclude them to have a better fit for the overall data
+```{r, include=TRUE}
+Data_modified <- DandData[-c(95, 171, 204), ]
+summary(Data_modified)
+describe(Data_modified)
+view(Data_modified)
+
+reg_model2 <- lm(cr ~ ac + str + dex + hp_number, Data_modified)
+summary(reg_model2)
+
+reg_model2 %>% 
+  plot(which = 4)
+describe(residuals(reg_model2))
+reg_model2 %>% 
+  residualPlots()
+reg_model2 %>% 
+  plot(which = 3)
+reg_model2 %>% 
+  bptest()
+reg_model2 %>% 
+  vif()
+AIC(reg_model2)
+```
+#Results from the second regression
+The second model is better, kurtosis is less (Still quite high = 3,81), but on AIC the model rates better, RSE is also lower and adjustedrsquare a bit better. We had to exclude three outliers to achieve this (Tarrasque, Ancient Gold Dragon and Ancient Red dragon) because their hp distored the model. Altough dex and str doesnt show a strong correlation with the cr at all, so we might just well exclude them from the predictors and try out another predictor.
+
+```{r, include=TRUE}
+reg_model3 <- lm(cr ~ ac + hp_number * size, Data_modified)
+summary(reg_model3)
+reg_model3 %>% 
+  residualPlots()
+corr()
+
+reg_model3 %>% 
+  vif()
 ```
