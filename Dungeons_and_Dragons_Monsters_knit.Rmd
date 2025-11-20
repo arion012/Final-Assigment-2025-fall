@@ -250,11 +250,15 @@ finalsplit <- initial_split(Data_modified1,
                          strata = cr)
 
 supmodelfinal <- lm_model %>% 
-  last_fit(cr ~ ac + hp_number * size, Data_modified1)
-           split = Ddsplit)
+  last_fit(cr ~ ac + hp_number * size, 
+           split = finalsplit)
 
 supmodelfinal %>% 
   collect_metrics()
 supmodel2_pred <- supmodel2 %>% 
   collect_predictions()
+supmodel2_pred
 ```
+#Verdict
+We managed to assert a supervised algorithm which does its job fairly well on guessing cr of monsters, which are not some outlying cases. But with an 1.23 rmse the mistakes are quite low and rsq is quite high (9.50) explaining quite large part of the residuals.
+I hope this algorithm will be somewhat useful for the futures adventurers for guessing cr of monsters. 
