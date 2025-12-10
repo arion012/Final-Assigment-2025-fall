@@ -3,7 +3,12 @@ title: 'Dungeons and Dragons: monsters'
 author: "Sebestyén V.Nagy"
 output: html_document
 ---
-```{r, include=FALSE}
+
+# My goal
+
+In this task I would like to build a supervised learning algorithm which helps adventurers in D&D to determine a monsters cr based on the stats it has. So the adventuring party can prepare accordingly.
+
+```{r, include=TRUE}
 options(repos = c(CRAN = "https://cran.rstudio.com/"))
 install.packages("tidyr")
 install.packages("Rsampling")
@@ -24,15 +29,20 @@ install.packages("tidymodels")
 library(tidymodels)
 library(car)
 library(lmtest)
+library(ggplot2)
 
 ```
+
 # Reading the data in
+
 ```{r, include=TRUE}
 DandData <- readr::read_csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/refs/heads/main/data/2025/2025-05-27/monsters.csv")
 view(DandData)
 describe(DandData)
 ```
-#Making some factorization
+
+# Making some factorization
+
 ```{r, include=TRUE}
 
 DandData<- DandData %>% 
@@ -61,6 +71,10 @@ geom_bar()
 
 ```
 
+In the first graph we can see that there is a correlational tendency between armor class (ac) and crit rating (cr) however since there are just a few cases in the low ac, cr and the high counterparts they hacve a strong impact on the tendency.
+
+We can see on the bar graph, that most creatures fall in the medium and large category. Beasts, monstrosities and dragons are almost represented in every category. The gargantuan category is dominated by dragons and no beasts can be found in the medium or small category.  
+
 # Exploring the data with suprevised learning models
 
 ```{r, include=TRUE}
@@ -88,11 +102,14 @@ ggplot(ddlastfit_model1, aes(x = cr, y = .pred)) +
 
 
 ```
+
 Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
 
 # Building a complex supervised learning model
+
 This time predicting that monsters with higher intelligence, wisdom and charisma would score higher in challange rating because they can subdue the adventurers via manipulation
+
 ```{r, include=TRUE}
 
 supmodel2 <- lm_model %>% 
@@ -132,19 +149,24 @@ ggplot(supmodel3_pred, aes(x = cr, y = .pred)) +
   geom_smooth()
 
 ```
-Oh okay, it seems that this is way more accurate than our previous two hypothesises, with a 0.947 rsq its outstanding at explaining the data coming much closer to fully explainig it fully, rmse is way smaller 1.69. It seems that creatures with higher cr are usually way more stronger, more agile and usually with more HP. But now lets check it with more in depth linear regression model to understand which predictors play a key factor in explaining cr 
+
+Oh okay, it seems that this is way more accurate than our previous two hypothesises, with a 0.947 rsq its outstanding at explaining the data coming much closer to fully explainig it fully, rmse is way smaller 1.69. It seems that creatures with higher cr are usually way more stronger, more agile and usually with more HP. But now lets check it with more in depth linear regression model to understand which predictors play a key role in explaining cr 
 
 # Building a simple linear regression model
+
 ```{r, include=TRUE}
 reg_model1 <- lm(cr ~ ac + str + dex + hp_number, DandData)
 summary(reg_model1)
 ```
-Well, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
+
+ell, its seems that the rsquare is 0.678 which is pretty high but I think it could be improved still, with some other variable. And the Rmse is pretty high 3.81 considering Cr goes up to 30 so the model is amiss with more than 10% on average. 
 
 # Testing the model
 
 ```{r, include=TRUE}
-AIC(reg_model1) #pretty high AIC which means that the model doesn't not fit that well, and there is a high value of errors also but in itself we cant use this information just now, but when we build the second model. 
+AIC(reg_model1) 
+
+#pretty high AIC which means that the model doesn't not fit that well, and there is a high value of errors also but in itself we cant use this information just now, but when we build the second model. 
 
 reg_model1 %>% 
   plot(which = 4)
@@ -157,24 +179,29 @@ reg_model1 %>%
 reg_model1 %>% 
   plot(which = 2)
 describe(residuals(reg_model1))
+
 #skewness is alright with 0.59 but the kurtosis isn't the best its well over 5.2, it can mean that the normality requirement is unmet, could be because of the influential cases.
 
 reg_model1 %>% 
   residualPlots()
+
 #linearity is definitely unmet with hp_number this time. The other ones are pretty solid with linearity. It seems possible that including the Hp can hurt the model. But lets check further... 
 
 reg_model1 %>% 
   plot(which = 3)
 reg_model1 %>% 
   bptest()
+
 #homoscedasticity is also significant in the model. Which means that the residuals are not spread out similarly in the model.
 
 reg_model1 %>% 
   vif()
+
 #but at least it seems that multicorrealinity isn't problematic. 
 ```
 
 So the model isn't that great, there are some influential cases which distort our results, we might want to exclude them to have a better fit for the overall data
+
 ```{r, include=TRUE}
 Data_modified <- DandData[-c(95, 171, 204), ]
 summary(Data_modified)
@@ -197,13 +224,19 @@ reg_model2 %>%
   vif()
 AIC(reg_model2)
 ```
+
 # Results from the second regression
 
 The second model is better, kurtosis is less (Still quite high = 3,81), but on AIC the model rates better, RSE is also lower and adjustedrsquare a bit better. We had to exclude three outliers to achieve this (Tarrasque, Ancient Gold Dragon and Ancient Red dragon) because their hp distored the model. Altough dex and str doesnt show a strong correlation with the cr at all, so we might just well exclude them from the predictors and try out another predictor.
 
 ```{r, include=TRUE}
-res <- aov(hp_number ~ size, data = Data_modified) #checking whether there is a difference between HP based on the size category, there might be an interaction going on between these two predictors. 
-summary(res) #its seems like its a certain possibility
+res <- aov(hp_number ~ size, data = Data_modified) 
+
+#checking whether there is a difference between HP based on the size category, there might be an interaction going on between these two predictors. 
+
+summary(res) 
+
+#its seems like its a certain possibility
 
 reg_model3 <- lm(cr ~ ac + hp_number * size, Data_modified)
 summary(reg_model3)
@@ -238,12 +271,14 @@ reg_model4 %>%
 
 AIC(reg_model4)
 ```
+
 # Results from the third regression
 
 Well, we found that size is a much better predictor, combined with AC it explains 0.948 of the residuals. In the mean time it seem to interact with Hp_number so we got a pretty much working modell now. We could still improve on this by excluding some outliers based on the cooks distance (4/n) (ancient red dragon, lemure and mummy) and it also significantly improves the AIC. The interaction weak point is only with small and tiny creatures, it comes short with them. We also impacted the curtosis by the trimmings it got higher compared to the previous model. 
 
 
 ```{r, include=TRUE}
+
 finalsplit <- initial_split(Data_modified1,
                          prop = 0.75,
                          strata = cr)
@@ -257,8 +292,10 @@ supmodelfinal %>%
 supmodel2_pred <- supmodel2 %>% 
   collect_predictions()
 supmodel2_pred
+
 ```
+
 # Verdict
 
-We managed to assert a supervised algorithm which does its job fairly well on guessing cr of monsters, which are not some outlying cases. But with an 1.23 rmse the mistakes are quite low and rsq is quite high (9.50) explaining quite large part of the residuals.
-I hope this algorithm will be somewhat useful for the futures adventurers for guessing cr of monsters. 
+We managed to assert a supervised algorithm which does its job fairly well on guessing cr of monsters, which are not some outlying cases. But with an 1.23 rmse the mistakes are quite low and rsq is quite high (9.50) explaining a large portion of the residuals.
+I hope this algorithm will be somewhat useful for future adventurers aiding them with guessing cr of monsters. 
